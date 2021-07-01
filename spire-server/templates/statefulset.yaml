@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spire-server
+  namespace: spire
+  labels:
+    app: spire-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-server
+  serviceName: spire-server
+  template:
+    metadata:
+      namespace: spire
+      labels:
+        app: spire-server
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: spire-server
+      containers:
+        - name: spire-server
+          image: gcr.io/spiffe-io/spire-server:0.12.3
+          args: ["-config", "/run/spire/config/server.conf"]
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: bootstrap
+              mountPath: /run/spire/bootstrap
+              readOnly: true
+            - name: sockets
+              mountPath: /run/spire/sockets
+              readOnly: false
+            - name: data
+              mountPath: /run/spire/data
+              readOnly: false
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            failureThreshold: 2
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: spire-server
+        - name: bootstrap
+          secret:
+            secretName: bootstrap-secret
+        - name: sockets
+          hostPath:
+            path: /run/spire/sockets
+            type: DirectoryOrCreate
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        namespace: spire
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
