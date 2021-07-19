@@ -25,7 +25,7 @@ config: |
     trust_domain = "example.org"
   }
 
-  plugins: {
+  plugins {
     DataStore "sql" {
       plugin_data {
         database_type = "sqlite3"
@@ -68,7 +68,7 @@ config: |
     }
   }
 
-  health_checks: {
+  health_checks {
     listener_enabled = true
     bind_address = "0.0.0.0"
     bind_port = "8080"
