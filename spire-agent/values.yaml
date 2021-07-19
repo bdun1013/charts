@@ -3,12 +3,14 @@ fullnameOverride: ""
 
 image:
   registry: "gcr.io"
-  repository: "spiffe-io/spire-server"
+  repository: "spiffe-io/spire-agent"
   tag: "1.0.0"
 
 config: |
   agent {
+    allow_unauthenticated_verifiers = false
     data_dir = "/run/spire/data"
+    insecure_bootstrap = false
     log_level = "DEBUG"
     log_format = "json"
     server_address = "spire-server"

@@ -58,7 +58,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: spire-server
+            name: {{ include "spire-server.fullname" . }}
         - name: bootstrap
           secret:
             secretName: bootstrap-secret

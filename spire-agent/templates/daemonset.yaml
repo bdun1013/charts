@@ -66,7 +66,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: spire-agent
+            name: {{ include "spire-agent.fullname" . }}
         - name: bootstrap
           configMap:
             name: trust-bundle
