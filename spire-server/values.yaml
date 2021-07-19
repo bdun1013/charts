@@ -50,7 +50,7 @@ config:
     readyPath: "/ready"
   serverConfTpl: |
     server {
-      bind_address = {{ .Values.config.address | quote }}
+      bind_address = {{ .Values.config.bind.address | quote }}
       bind_port = {{ .Values.config.bind.port | quote }}
       ca_key_type = {{ .Values.config.ca.keyType | quote }}
       ca_subject = {
