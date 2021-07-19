@@ -20,14 +20,14 @@ spec:
       hostPID: true
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-      serviceAccountName: spire-agent
+      serviceAccountName: {{ include "spire-agent.fullname" . }}
       initContainers:
         - name: init
           image: gcr.io/spiffe-io/wait-for-it
           args:
           - "-t"
           - "30"
-          - "spire-server:8081"
+          - {{ printf "%s:%s" .Values.config.server.address .Values.config.server.port }}
       containers:
         - name: spire-agent
           image: {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -49,20 +49,22 @@ spec:
               readOnly: false
             - name: tokens
               mountPath: /var/run/secrets/tokens
+          {{- if .Values.config.healthChecks.enabled }}
           livenessProbe:
             httpGet:
-              path: /live
-              port: 8080
+              path: {{ .Values.config.healthChecks.livePath | quote }}
+              port: {{ .Values.config.healthChecks.bind.port }}
             failureThreshold: 2
             initialDelaySeconds: 15
             periodSeconds: 60
             timeoutSeconds: 3
           readinessProbe:
             httpGet:
-              path: /ready
-              port: 8080
+              path: {{ .Values.config.healthChecks.readyPath | quote }}
+              port: {{ .Values.config.healthChecks.bind.port }}
             initialDelaySeconds: 5
             periodSeconds: 5
+          {{- end }}
       volumes:
         - name: config
           configMap:

@@ -32,6 +32,8 @@ config:
     nodeAttestor:
       k8sPsat:
         enabled: true
+        cluster: "demo-cluster"
+        serviceAccountAllowList: "spire:spire-agent"
     nodeResolver: {}
     upstreamAuthority:
       disk:
@@ -87,8 +89,8 @@ config:
       NodeAttestor "k8s_psat" {
         plugin_data {
           clusters = {
-            "demo-cluster" = {
-              service_account_allow_list = ["spire:spire-agent"]
+            {{ .Values.config.plugins.nodeAttestor.k8sPsat.cluster | quote }} = {
+              service_account_allow_list = [{{ .Values.config.plugins.nodeAttestor.k8sPsat.serviceAccountAllowList | quote }}]
             }
           }
         }

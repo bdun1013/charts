@@ -41,6 +41,7 @@ spec:
             - name: data
               mountPath: /run/spire/data
               readOnly: false
+          {{- if .Values.config.healthChecks.enabled }}
           livenessProbe:
             httpGet:
               path: {{ .Values.config.healthChecks.livePath | quote }}
@@ -55,6 +56,7 @@ spec:
               port: {{ .Values.config.healthChecks.bind.port }}
             initialDelaySeconds: 5
             periodSeconds: 5
+          {{- end }}
       volumes:
         - name: config
           configMap:

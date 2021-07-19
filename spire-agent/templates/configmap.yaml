@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: spire-agent
+  name: {{ include "spire-agent.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "spire-agent.labels" . | nindent 4 }}
 data:
   agent.conf: |
-    {{- tpl .Values.config . | nindent 4 }}
+    {{- tpl .Values.config.agentConfTpl . | nindent 4 }}
