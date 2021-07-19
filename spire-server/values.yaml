@@ -9,19 +9,19 @@ image:
 config: |
   server {
     bind_address = "0.0.0.0"
-    bind_port = "8081"
+    bind_port = {{ .Values.service.port | quote }}
     ca_key_type = "ec-p256"
     ca_subject = {
       country = ["US"],
       organization = ["SPIFFE"],
-      common_name = "",
+      common_name = "SPIRE",
     }
     ca_ttl = "24h"
     data_dir = "/run/spire/data"
     default_svid_ttl = "1h"
     log_level = "DEBUG"
     log_format = "json"
-    registration_uds_path = "/run/spire/sockets/spire-registration.sock"
+    socket_path = "/run/spire/sockets/api.sock"
     trust_domain = "example.org"
   }
 
@@ -37,14 +37,10 @@ config: |
       plugin_data {
         clusters = {
           "demo-cluster" = {
-            service_account_whitelist = ["spire:spire-agent"]
+            service_account_allow_list = ["spire:spire-agent"]
           }
         }
       }
-    }
-
-    NodeResolver "noop" {
-      plugin_data {}
     }
 
     KeyManager "disk" {
