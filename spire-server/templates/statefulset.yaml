@@ -1,31 +1,33 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: spire-server
-  namespace: spire
+  name: {{ include "spire-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    app: spire-server
+    {{- include "spire-server.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: spire-server
-  serviceName: spire-server
+      {{- include "spire-server.selector-labels" . | nindent 6 }}
+  serviceName: {{ include "spire-server.fullname" . }}
   template:
     metadata:
-      namespace: spire
+      namespace: {{ .Release.Namespace }}
       labels:
-        app: spire-server
+        {{- include "spire-server.labels" . | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
-      serviceAccountName: spire-server
+      serviceAccountName: {{ include "spire-server.fullname" . }}
       containers:
         - name: spire-server
-          image: gcr.io/spiffe-io/spire-server:0.12.3
-          args: ["-config", "/run/spire/config/server.conf"]
+          image: {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args:
+            - "-config"
+            - "/run/spire/config/server.conf"
           ports:
-            - containerPort: 8081
+            - containerPort: {{ .Values.service.port }}
           volumeMounts:
             - name: config
               mountPath: /run/spire/config
@@ -67,10 +69,10 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: data
-        namespace: spire
+        namespace: {{ .Release.Namespace }}
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: {{ .Values.persistence.size }}

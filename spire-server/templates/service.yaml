@@ -1,14 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: spire-server
-  namespace: spire
+  name: {{ include "spire-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spire-server.labels" . | nindent 4 }}
 spec:
-  type: NodePort
+  type: {{ .Values.service.type }}
   ports:
     - name: grpc
-      port: 8081
-      targetPort: 8081
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
       protocol: TCP
   selector:
-    app: spire-server
+    {{- include "spire-server.selector-labels" . | nindent 4 }}

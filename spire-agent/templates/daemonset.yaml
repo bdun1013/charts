@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: spire-agent
-  namespace: spire
+  name: {{ include "spire-agent.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    app: spire-agent
+    {{- include "spire-agent.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      app: spire-agent
+      {{- include "spire-agent.selector-labels" . | nindent 6 }}
   template:
     metadata:
-      namespace: spire
+      namespace: {{ .Release.Namespace }}
       labels:
-        app: spire-agent
+        {{- include "spire-agent.labels" . | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -24,11 +24,16 @@ spec:
       initContainers:
         - name: init
           image: gcr.io/spiffe-io/wait-for-it
-          args: ["-t", "30", "spire-server:8081"]
+          args:
+          - "-t"
+          - "30"
+          - "spire-server:8081"
       containers:
         - name: spire-agent
-          image: gcr.io/spiffe-io/spire-agent:0.12.3
-          args: ["-config", "/run/spire/config/agent.conf"]
+          image: {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args:
+          - "-config"
+          - "/run/spire/config/agent.conf"
           volumeMounts:
             - name: config
               mountPath: /run/spire/config

@@ -1,12 +1,15 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: spire-server-cluster-role-binding
+  name: {{ include "spire-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spire-server.labels" . | nindent 4 }}
 subjects:
 - kind: ServiceAccount
-  name: spire-server
-  namespace: spire
+  name: {{ include "spire-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: spire-server-cluster-role
+  name: {{ include "spire-server.fullname" . }}
   apiGroup: rbac.authorization.k8s.io

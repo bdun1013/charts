@@ -1,14 +1,29 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: spire-server-cluster-role
+  name: {{ include "spire-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spire-server.labels" . | nindent 4 }}
 rules:
-- apiGroups: [""]
-  resources: ["pods", "nodes"]
-  verbs: ["get"]
-- apiGroups: [""]
-  resources: ["configmaps"]
-  verbs: ["patch", "get", "list"]
-- apiGroups: ["authentication.k8s.io"]
-  resources: ["tokenreviews"]
-  verbs: ["create"]
+- apiGroups:
+  - ""
+  resources:
+  - "pods"
+  - "nodes"
+  verbs:
+  - "get"
+- apiGroups:
+  - ""
+  resources:
+  - "configmaps"
+  verbs:
+  - "patch"
+  - "get"
+  - "list"
+- apiGroups:
+  - "authentication.k8s.io"
+  resources:
+  - "tokenreviews"
+  verbs:
+  - "create"
