@@ -6,71 +6,121 @@ image:
   repository: "spiffe-io/spire-server"
   tag: "1.0.0"
 
-config: |
-  server {
-    bind_address = "0.0.0.0"
-    bind_port = {{ .Values.service.port | quote }}
-    ca_key_type = "ec-p256"
-    ca_subject = {
-      country = ["US"],
-      organization = ["SPIFFE"],
-      common_name = "SPIRE",
-    }
-    ca_ttl = "24h"
-    data_dir = "/run/spire/data"
-    default_svid_ttl = "1h"
-    log_level = "DEBUG"
-    log_format = "json"
-    socket_path = "/run/spire/sockets/api.sock"
-    trust_domain = "example.org"
-  }
-
-  plugins {
-    DataStore "sql" {
-      plugin_data {
-        database_type = "sqlite3"
-        connection_string = "/run/spire/data/datastore.sqlite3"
+config:
+  bind:
+    address: "0.0.0.0"
+    port: 8081
+  ca:
+    keyType: "ec-p256"
+    country: "US"
+    organization: "SPIFFE"
+    commonName: "SPIRE"
+    ttl: "24h"
+  log:
+    level: "DEBUG"
+    format: "json"
+  trustDomain: "example.org"
+  plugins:
+    dataStore:
+      sql:
+        enabled: true
+        databaseType: "sqlite3"
+        connectionString: "/run/spire/data/dataStore.sqlite3"
+    keyManager:
+      disk:
+        enabled: true
+    nodeAttestor:
+      k8sPsat:
+        enabled: true
+    nodeResolver: {}
+    upstreamAuthority:
+      disk:
+        enabled: true
+    notifier:
+      k8sbundle:
+        enabled: true
+  healthChecks:
+    enabled: true
+    bind:
+      address: "0.0.0.0"
+      port: 8080
+    livePath: "/live"
+    readyPath: "/ready"
+  serverConfTpl: |
+    server {
+      bind_address = {{ .Values.config.address | quote }}
+      bind_port = {{ .Values.config.bind.port | quote }}
+      ca_key_type = {{ .Values.config.ca.keyType | quote }}
+      ca_subject = {
+        country = [{{ .Values.config.ca.country | quote }}],
+        organization = [{{ .Values.config.ca.organization | quote }}],
+        common_name = {{ .Values.config.ca.commonName | quote }},
       }
+      ca_ttl = {{ .Values.config.ca.ttl | quote }}
+      data_dir = "/run/spire/data"
+      default_svid_ttl = "1h"
+      log_level = {{ .Values.config.log.level | quote }}
+      log_format = {{ .Values.config.log.format | quote }}
+      socket_path = "/run/spire/sockets/api.sock"
+      trust_domain = {{ .Values.config.trustDomain | quote }}
     }
 
-    NodeAttestor "k8s_psat" {
-      plugin_data {
-        clusters = {
-          "demo-cluster" = {
-            service_account_allow_list = ["spire:spire-agent"]
+    plugins {
+      {{- if .Values.config.plugins.dataStore.sql.enabled }}
+      DataStore "sql" {
+        plugin_data {
+          database_type = {{ .Values.config.plugins.dataStore.sql.databaseType | quote }}
+          connection_string = {{ .Values.config.plugins.dataStore.sql.connectionString | quote }}
+        }
+      }
+      {{- end }}
+
+      {{- if .Values.config.plugins.keyManager.disk.enabled }}
+      KeyManager "disk" {
+        plugin_data {
+          keys_path = "/run/spire/data/keys.json"
+        }
+      }
+      {{- end }}
+
+      {{- if .Values.config.plugins.nodeAttestor.k8sPsat.enabled }}
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          clusters = {
+            "demo-cluster" = {
+              service_account_allow_list = ["spire:spire-agent"]
+            }
           }
         }
       }
-    }
+      {{- end }}
 
-    KeyManager "disk" {
-      plugin_data {
-        keys_path = "/run/spire/data/keys.json"
+      {{- if .Values.config.plugins.upstreamAuthority.disk.enabled }}
+      UpstreamAuthority "disk" {
+        plugin_data {
+          key_file_path = "/run/spire/bootstrap/tls.key"
+          cert_file_path = "/run/spire/bootstrap/tls.crt"
+        }
       }
-    }
+      {{- end }}
 
-    UpstreamAuthority "disk" {
-      plugin_data {
-        key_file_path = "/run/spire/bootstrap/tls.key"
-        cert_file_path = "/run/spire/bootstrap/tls.crt"
+      {{- if .Values.config.plugins.notifier.k8sbundle.enabled }}
+      Notifier "k8sbundle" {
+        plugin_data {
+          config_map = "trust-bundle"
+          config_map_key = "trust-bundle.crt"
+        }
       }
+      {{- end }}
     }
 
-    Notifier "k8sbundle" {
-      plugin_data {
-        config_map = "trust-bundle"
-        config_map_key = "trust-bundle.crt"
-      }
+    health_checks {
+      listener_enabled = {{ .Values.config.healthChecks.enabled }}
+      bind_address = {{ .Values.config.healthChecks.bind.address | quote }}
+      bind_port = {{ .Values.config.healthChecks.bind.port | quote }}
+      live_path = {{ .Values.config.healthChecks.livePath | quote }}
+      ready_path = {{ .Values.config.healthChecks.readyPath | quote }}
     }
-  }
-
-  health_checks {
-    listener_enabled = true
-    bind_address = "0.0.0.0"
-    bind_port = "8080"
-    live_path = "/live"
-    ready_path = "/ready"
-  }
 
 persistence:
   enabled: true
@@ -78,4 +128,3 @@ persistence:
 
 service:
   type: ClusterIP
-  port: 8081

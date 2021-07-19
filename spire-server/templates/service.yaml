@@ -9,8 +9,8 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - name: grpc
-      port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.port }}
+      port: {{ .Values.config.bind.port }}
+      targetPort: {{ .Values.config.bind.port }}
       protocol: TCP
   selector:
     {{- include "spire-server.selector-labels" . | nindent 4 }}
