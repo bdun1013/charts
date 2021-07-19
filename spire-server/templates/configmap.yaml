@@ -7,4 +7,4 @@ metadata:
     {{- include "spire-server.labels" . | nindent 4 }}
 data:
   server.conf: |
-    {{- tpl .Values.config.serverConfTpl . | nindent 4 }}
+    {{- include "spire-server.conf" . | nindent 4 }}

@@ -12,14 +12,15 @@ config:
     port: 8081
   ca:
     keyType: "ec-p256"
-    country: "US"
-    organization: "SPIFFE"
-    commonName: "SPIRE"
+    subject:
+      country: ""
+      organization: ""
+      commonName: ""
     ttl: "24h"
   log:
-    level: "DEBUG"
+    level: "INFO"
     format: "json"
-  trustDomain: "example.org"
+  trustDomain: ""
   plugins:
     dataStore:
       sql:
@@ -32,7 +33,7 @@ config:
     nodeAttestor:
       k8sPsat:
         enabled: true
-        cluster: "demo-cluster"
+        cluster: ""
         serviceAccountAllowList: "spire:spire-agent"
     nodeResolver: {}
     upstreamAuthority:
@@ -48,81 +49,6 @@ config:
       port: 8080
     livePath: "/live"
     readyPath: "/ready"
-  serverConfTpl: |
-    server {
-      bind_address = {{ .Values.config.bind.address | quote }}
-      bind_port = {{ .Values.config.bind.port | quote }}
-      ca_key_type = {{ .Values.config.ca.keyType | quote }}
-      ca_subject = {
-        country = [{{ .Values.config.ca.country | quote }}],
-        organization = [{{ .Values.config.ca.organization | quote }}],
-        common_name = {{ .Values.config.ca.commonName | quote }},
-      }
-      ca_ttl = {{ .Values.config.ca.ttl | quote }}
-      data_dir = "/run/spire/data"
-      default_svid_ttl = "1h"
-      log_level = {{ .Values.config.log.level | quote }}
-      log_format = {{ .Values.config.log.format | quote }}
-      socket_path = "/run/spire/sockets/api.sock"
-      trust_domain = {{ .Values.config.trustDomain | quote }}
-    }
-
-    plugins {
-      {{- if .Values.config.plugins.dataStore.sql.enabled }}
-      DataStore "sql" {
-        plugin_data {
-          database_type = {{ .Values.config.plugins.dataStore.sql.databaseType | quote }}
-          connection_string = {{ .Values.config.plugins.dataStore.sql.connectionString | quote }}
-        }
-      }
-      {{- end }}
-
-      {{- if .Values.config.plugins.keyManager.disk.enabled }}
-      KeyManager "disk" {
-        plugin_data {
-          keys_path = "/run/spire/data/keys.json"
-        }
-      }
-      {{- end }}
-
-      {{- if .Values.config.plugins.nodeAttestor.k8sPsat.enabled }}
-      NodeAttestor "k8s_psat" {
-        plugin_data {
-          clusters = {
-            {{ .Values.config.plugins.nodeAttestor.k8sPsat.cluster | quote }} = {
-              service_account_allow_list = [{{ .Values.config.plugins.nodeAttestor.k8sPsat.serviceAccountAllowList | quote }}]
-            }
-          }
-        }
-      }
-      {{- end }}
-
-      {{- if .Values.config.plugins.upstreamAuthority.disk.enabled }}
-      UpstreamAuthority "disk" {
-        plugin_data {
-          key_file_path = "/run/spire/bootstrap/tls.key"
-          cert_file_path = "/run/spire/bootstrap/tls.crt"
-        }
-      }
-      {{- end }}
-
-      {{- if .Values.config.plugins.notifier.k8sbundle.enabled }}
-      Notifier "k8sbundle" {
-        plugin_data {
-          config_map = "trust-bundle"
-          config_map_key = "trust-bundle.crt"
-        }
-      }
-      {{- end }}
-    }
-
-    health_checks {
-      listener_enabled = {{ .Values.config.healthChecks.enabled }}
-      bind_address = {{ .Values.config.healthChecks.bind.address | quote }}
-      bind_port = {{ .Values.config.healthChecks.bind.port | quote }}
-      live_path = {{ .Values.config.healthChecks.livePath | quote }}
-      ready_path = {{ .Values.config.healthChecks.readyPath | quote }}
-    }
 
 persistence:
   enabled: true
