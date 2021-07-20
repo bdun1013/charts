@@ -11,6 +11,14 @@ server {
   ca_ttl = {{ .Values.config.ca.ttl | quote }}
   data_dir = "/run/spire/data"
   default_svid_ttl = "1h"
+  {{- if .Values.config.federation.enabled }}
+  federation {
+    bundle_endpoint {
+        address = {{ .Values.config.federation.bundleEndpoint.address | quote }}
+        port = {{ .Values.config.federation.bundleEndpoint.port }}
+    }
+  }
+  {{- end }}
   log_level = {{ .Values.config.log.level | quote }}
   log_format = {{ .Values.config.log.format | quote }}
   socket_path = "/run/spire/sockets/api.sock"
